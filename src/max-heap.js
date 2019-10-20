@@ -18,31 +18,57 @@ class MaxHeap {
 			this.restoreRootFromLastInsertedNode(detached);
 			this.shiftNodeDown(this.root);
 			return detached.data;
-		}			
-			
+		}
+
 	}
 
 
 	detachRoot() {
-		
-		if (this.parentNodes.includes(this.root)){
-			this.parentNodes.shift();
+		if (!this.isEmpty()) {
+			if (this.parentNodes.includes(this.root)) {
+				this.parentNodes.splice(this.parentNodes.indexOf(this.root), 1);
+			}
+			let detachedRoot = this.root;
+			this.root = null;
+			return detachedRoot;
 		}
-		let temproot=this.root;
-		this.root = null;
-		return temproot;
 	}
 
 	restoreRootFromLastInsertedNode(detached) {
+		if (!this.isEmpty()) {
+			let LastInsertedNode = this.parentNodes.pop();
+			if (!LastInsertedNode) {
+				LastInsertedNode = detached;
+			}
 
+			this.root = LastInsertedNode;
+
+			if (LastInsertedNode.parent == detached) {
+				this.parentNodes.unshift(LastInsertedNode);
+			} else if (LastInsertedNode.parent && LastInsertedNode.parent.right == LastInsertedNode) {
+				this.parentNodes.unshift(LastInsertedNode.parent);
+			}
+
+			LastInsertedNode.remove();
+
+			if (detached.left) LastInsertedNode.appendChild(detached.left);
+
+			if (detached.right) LastInsertedNode.appendChild(detached.right);
+		}
 	}
 
 	size() {
-
+		function countNodes(node) {
+			if (node == null) return 0;
+			return countNodes(node.left) + countNodes(node.right) + 1;
+		}
+		return countNodes(this.root);
 	}
 
+
+
 	isEmpty() {
-		return (!this.root && !this.parentNodes.length)
+		return this.root == null && this.parentNodes.length == 0;
 	}
 
 	clear() {
@@ -55,10 +81,10 @@ class MaxHeap {
 		if (!this.root) {
 			this.root = node;
 			return;
-		} else {
+		} else if (!this.parentNodes[0].left) {
 			this.parentNodes[0].appendChild(node);
-		}
-		if (this.parentNodes[0].left && this.parentNodes[0].right) {
+		} else if (!this.parentNodes[0].right) {
+			this.parentNodes[0].appendChild(node);
 			this.parentNodes.shift();
 		}
 
@@ -66,23 +92,50 @@ class MaxHeap {
 	}
 
 	shiftNodeUp(node) {
-		if (node.parent) {
+		if (!node.parent) {
+			this.root = node;
+			return;
+		}
+		if (node.priority > node.parent.priority) {
 			let nodeIndex = this.parentNodes.indexOf(node);
 			let nodeParentIndex = this.parentNodes.indexOf(node.parent);
-			if (node.priority > node.parent.priority) {
 
-				this.parentNodes[nodeIndex] = node.parent;
-				this.parentNodes[nodeParentIndex] = node;
-			}
+			if (nodeParentIndex !== -1) this.parentNodes[nodeParentIndex] = node;
+			if (nodeIndex !== -1) this.parentNodes[nodeIndex] = node.parent;
+
 			node.swapWithParent();
 			this.shiftNodeUp(node);
-		} else {
-			this.root = node;
 		}
 	}
 
 	shiftNodeDown(node) {
-		
+		let child;
+		if (node && node.left) {   // выбираем потомка
+
+
+			if (node.left.priority > node.priority) {
+				child = node.left;
+			}
+			if (node.right && node.right.priority > node.left.priority) {
+				child = node.right;
+			}
+		}
+		if (!child) return
+		let nodeIndex = this.parentNodes.indexOf(node);
+		let childIndex = this.parentNodes.indexOf(child);
+		if (node.priority < child.priority) {
+			if (this.root === node) this.root = child;
+			if (childIndex != -1) {
+				if (nodeIndex != -1) {
+					this.parentNodes[childIndex] = node;
+					this.parentNodes[nodeIndex] = child;
+				} else {
+					this.parentNodes[childIndex] = node;
+				}
+			}
+			child.swapWithParent();
+			this.shiftNodeDown(node);
+		}
 
 
 	}
